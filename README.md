@@ -1,0 +1,291 @@
+# 🚗 Car Damage Detection
+
+[![CI](https://github.com/<jouw-username>/vehicle-damage-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/<jouw-username>/vehicle-damage-ai/actions/workflows/ci.yml)
+
+Een Computer Vision-systeem dat autoschade automatisch detecteert en classificeert
+aan de hand van foto's, om de eerste beoordeling (triage) van een schadeclaim
+sneller en consistenter te maken.
+
+> ⚠️ Het systeem vervangt de schade-expert niet — het ondersteunt de eerste
+> beoordeling, de expert neemt de uiteindelijke beslissing.
+
+## Probleemstelling
+
+Verzekeringsmaatschappijen ontvangen dagelijks schadeclaims waarbij medewerkers
+handmatig foto's moeten beoordelen. Dit kost tijd en de beoordeling kan per
+schade-expert verschillen.
+
+**Doelgroep**: verzekeringsmaatschappijen, schade-experts, garagebedrijven, leasebedrijven.
+
+## Computer Vision-taak
+
+**Instance Segmentation** (classificatie + pixel-masker per schade-instantie).
+Het model herkent, lokaliseert én segmenteert schade zoals krassen, deuken,
+scheuren, gebroken glas/lampen en lekke banden. Dankzij de pixel-masks kan het
+geschatte schadeoppervlak (%) berekend worden — niet mogelijk met alleen
+bounding boxes.
+
+## Model
+
+- **Architectuur**: YOLOv11x-Seg (Ultralytics), finetuned op basis van `yolo11x-seg.pt`
+- **Baseline**: pretrained model van [harpreetsahota/car-dd-segmentation-yolov11](https://huggingface.co/harpreetsahota/car-dd-segmentation-yolov11)
+- **Dataset**: [CarDD](https://huggingface.co/datasets/harpreetsahota/CarDD) (Wang, Li & Wu, 2023) —
+  4.000 hoge-resolutie afbeeldingen, 9.000+ geannoteerde schade-instanties,
+  6 klassen: crack, dent, glass shatter, lamp broken, scratch, tire flat
+- **Waarom YOLO-Seg**: combineert detectie + classificatie + segmentatie in
+  één forward pass, snel genoeg voor een webapp, sterke pretrained weights
+  voor eventuele verdere finetuning
+
+### Performance van het baseline model (mask segmentation, op CarDD testset)
+
+| Klasse | Precision | Recall | mAP50 | mAP50-95 |
+|---|---|---|---|---|
+| Alle klassen | 0.827 | 0.749 | 0.792 | 0.576 |
+| Crack | 0.665 | 0.483 | 0.518 | 0.214 |
+| Dent | 0.697 | 0.560 | 0.612 | 0.344 |
+| Glass shatter | 0.981 | 0.989 | 0.994 | 0.784 |
+| Lamp broken | 0.921 | 0.902 | 0.967 | 0.808 |
+| Scratch | 0.734 | 0.613 | 0.680 | 0.368 |
+| Tire flat | 0.962 | 0.949 | 0.982 | 0.941 |
+
+> Let op: recall op `crack` (48%) en `dent` (56%) is relatief laag — dit is
+> een bekende beperking, goed om te benoemen in je presentatie/conclusie.
+
+## Projectstructuur
+
+```
+vehicle-damage-ai/
+├── .github/workflows/
+│   └── ci.yml                 # Lint, syntax-check en unit tests bij elke push
+├── app/
+│   └── main.py                # Streamlit webapp
+├── src/
+│   ├── download_model.py      # Download het pretrained baseline model
+│   ├── prepare_data.py        # Download CarDD + exporteer naar YOLO-formaat
+│   ├── add_custom_data.py     # Voeg eigen gefotografeerde data toe
+│   ├── train.py                # Finetune het model verder (transfer learning)
+│   ├── evaluate.py             # Evalueer het eigen gefinetunede model
+│   ├── visualize_failures.py   # Visuele inspectie van foutieve voorspellingen
+│   ├── export_model.py         # Exporteer naar ONNX (deployment)
+│   └── inference.py            # Herbruikbare detectie-functies
+├── tests/
+│   └── test_inference.py      # Unit tests (geen model/netwerk nodig)
+├── notebooks/
+│   └── 01_eda.ipynb           # EDA op de CarDD-data
+├── data/
+│   ├── raw/custom/             # Eigen geannoteerde data (niet in git)
+│   └── processed/              # YOLO-geëxporteerde data (niet in git)
+├── models/                     # Pretrained baseline weights (niet in git)
+├── runs/                       # Trainingsresultaten/grafieken (niet in git)
+├── requirements.txt
+├── requirements-dev.txt        # + pytest, ruff
+├── pyproject.toml              # Ruff/pytest-configuratie
+└── README.md
+```
+
+## Installatie
+
+```bash
+# 1. Clone de repo
+git clone <repo-url>
+cd vehicle-damage-ai
+
+# 2. Maak een virtuele omgeving
+python -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+
+# 3. Installeer dependencies
+pip install -r requirements.txt
+
+# 4. Download het baseline model
+python src/download_model.py
+```
+
+## Volledige pipeline (reproduceerbaar)
+
+### Aanbevolen route: Google Colab (heeft gratis GPU)
+
+Open [`notebooks/colab_full_pipeline.ipynb`](notebooks/colab_full_pipeline.ipynb)
+in Google Colab en run 'm van boven naar beneden. Deze ene notebook doorloopt
+zelfstandig de hele pipeline: dataset downloaden → EDA → finetunen →
+evalueren → falen-analyse → ONNX-export, en slaat alles op naar Google Drive.
+
+Na afloop kopieer je het resultaat (model + evaluatiecijfers + EDA-plots)
+naar je lokale project — de laatste cel van de notebook legt precies uit welke
+bestanden waar naartoe gaan.
+
+### Alternatief: losse scripts (lokaal of los in Colab)
+
+```bash
+# 1. Baseline model downloaden
+python src/download_model.py
+
+# 2. Dataset downloaden en converteren naar YOLO-formaat
+python src/prepare_data.py
+
+# 3. EDA — open en run notebooks/01_eda.ipynb
+
+# 3b. (optioneel) Eigen gefotografeerde/geannoteerde data toevoegen
+python src/add_custom_data.py --source data/raw/custom
+
+# 4. Finetunen (transfer learning vanaf het pretrained model)
+python src/train.py
+
+# 5. Eigen model evalueren
+python src/evaluate.py
+
+# 6. Falen-analyse: visuele inspectie van moeilijke gevallen
+python src/visualize_failures.py
+
+# 7. Exporteren naar ONNX voor efficiëntere inference/deployment
+python src/export_model.py
+```
+
+> **Let op**: stap 4 vereist een GPU voor redelijke trainingstijd.
+> Aanbevolen: draai dit op [Google Colab](https://colab.research.google.com)
+> (gratis GPU) in plaats van lokaal op CPU. Upload hiervoor de `data/processed/`
+> map of run `prepare_data.py` direct in Colab.
+
+## Eigen data toevoegen
+
+Naast de publieke CarDD-dataset kun je eigen gefotografeerde schade
+toevoegen om het model te specialiseren op jullie eigen praktijkcases:
+
+1. Maak foto's van (nagebootste) schade
+2. Annoteer met [Roboflow](https://roboflow.com) of [CVAT](https://cvat.ai)
+   in YOLO-segmentatieformaat, met dezelfde 6 klassen als CarDD
+3. Zet de export in `data/raw/custom/` (met `images/` en `labels/` submappen)
+4. Run `python src/add_custom_data.py --source data/raw/custom`
+
+## Kwaliteitsborging (CI)
+
+Elke push/pull request draait automatisch (`.github/workflows/ci.yml`):
+- Linting met `ruff`
+- Syntax-check van alle Python-bestanden
+- Validiteit van de notebooks
+- Unit tests (`pytest tests/`) op de pure logica (bijv. oppervlakteberekening),
+  zonder dat daar een model of netwerktoegang voor nodig is
+
+## App online zetten (deployment — toegankelijk voor anderen)
+
+Om de webapp via een publieke link beschikbaar te maken (zodat je docent
+of medestudenten hem kunnen openen zonder iets te installeren), gebruiken
+we **Hugging Face Spaces**.
+
+> **Waarom niet Streamlit Community Cloud?** Die geeft gratis maar 1 GB RAM.
+> Ons model (`yolo11x-seg`, de grootste YOLO11-variant) past daar mogelijk
+> niet in. Hugging Face Spaces geeft gratis 2 vCPU + **16 GB RAM**, en
+> ondersteunt Streamlit-apps rechtstreeks.
+
+### Stappen
+
+1. Maak een gratis account op [huggingface.co](https://huggingface.co/join)
+2. Klik **New Space** → geef een naam → **SDK: Streamlit** → **Hardware: CPU basic (free)**
+3. Dit maakt een eigen git-repository voor je Space aan (los van je GitHub-repo)
+4. Clone die Space-repo lokaal, en kopieer je hele project erin:
+   ```bash
+   git clone https://huggingface.co/spaces/<jouw-username>/<space-naam>
+   cd <space-naam>
+   # kopieer alle projectbestanden hierin (app/, src/, requirements.txt, etc.)
+   ```
+5. Hernoem `SPACE_README.md` naar `README.md` in de Space-repo (deze bevat
+   de verplichte configuratie die Hugging Face nodig heeft om te weten dat
+   het een Streamlit-app is — pas het `[link naar je GitHub-repo]` erin aan)
+6. Push:
+   ```bash
+   git add -A
+   git commit -m "Deploy Car Damage Detection webapp"
+   git push
+   ```
+7. De Space bouwt automatisch (installeert `requirements.txt`, downloadt het
+   model bij de eerste request dankzij `ensure_model_available()` in
+   `app/main.py`) en je krijgt een publieke URL zoals:
+   `https://huggingface.co/spaces/<jouw-username>/<space-naam>`
+
+> Zet die link in je README, je slides en je verslag — dit is wat je docent
+> bedoelde met "toegankelijk voor anderen".
+
+## Model-optimalisatie (ONNX)
+
+Los van app-hosting bestaat er ook *model*-deployment/-optimalisatie: het
+model zelf kleiner/sneller maken voor inference (pipeline-stap 10 uit de
+opdracht). Dit is **optioneel** en dient een ander doel dan hierboven —
+het versnelt de inference zelf, het publiceert geen app. Zie `src/export_model.py`.
+
+## Lokaal draaien (voor ontwikkeling/testen)
+
+### Webapp starten
+```bash
+streamlit run app/main.py
+```
+Open vervolgens `http://localhost:8501` in je browser, upload een foto en bekijk de detectie.
+
+### Command-line inference
+```bash
+python src/inference.py data/processed/voorbeeldfoto.jpg
+```
+
+## Dataset
+
+- Bron: [CarDD](https://huggingface.co/datasets/harpreetsahota/CarDD) (Wang, Li & Wu, 2023)
+- 4.000 hoge-resolutie afbeeldingen, 9.000+ instanties, 6 schadecategorieën
+- Annotaties: masks + bounding boxes in COCO-formaat
+- Licentie: niet-commercieel onderzoek/educatie; onderliggende beelden vallen
+  onder Flickr/Shutterstock-licenties (zie [dataset-pagina](https://huggingface.co/datasets/harpreetsahota/CarDD) voor details)
+
+## Evaluatie
+
+### Baseline (pretrained, ongewijzigd model)
+Zie performance-tabel hierboven.
+
+### Eigen gefinetuned model
+*(Vul in na het runnen van `python src/evaluate.py` — output staat in
+`runs/eigen_evaluatie.md`, plak de tabel hieronder)*
+
+| Klasse | Precision | Recall | mAP50 | mAP50-95 |
+|---|---|---|---|---|
+| ... | ... | ... | ... | ... |
+
+### EDA-bevindingen
+*(Vul in na `notebooks/01_eda.ipynb` — bijv. class balance, corrupte bestanden, resolutieverdeling)*
+
+## Beperkingen
+
+- Lagere recall op `crack` (48%) en `dent` (56%) — fijne/subtiele schade wordt vaker gemist
+- Vuile auto's, regen of slechte belichting kunnen detectie bemoeilijken
+- Verborgen schade (bijv. structurele schade) wordt niet herkend, alleen zichtbare schade
+- Model is getraind op een specifieke dataset — generalisatie naar andere automerken/hoeken kan variëren
+
+## Conclusie
+
+### Praktische toepassing
+Het systeem is bedoeld als **triage-tool**: een eerste, geautomatiseerde
+inschatting van schade zodra een claim binnenkomt, zodat schade-experts
+sneller kunnen prioriteren welke claims urgent/duidelijk zijn en welke
+handmatige beoordeling nodig hebben. Het vervangt de expert niet — de
+uiteindelijke beslissing (repareren, total loss, uitkering) blijft mensenwerk.
+
+### Trade-offs
+| Keuze | Voordeel | Nadeel |
+|---|---|---|
+| YOLOv11-Seg i.p.v. Mask R-CNN | Sneller, beter geschikt voor een live webapp | Iets minder precies op zeer kleine/fijne schade |
+| Transfer learning i.p.v. training from scratch | Veel sneller, werkt met beperkte data/tijd | Model blijft afhankelijk van de bias in de originele CarDD-data |
+| ONNX-export | Snellere/lichtere inference, geen volledige PyTorch-stack nodig | Extra exportstap, iets minder flexibel dan het originele model |
+| Cloud-inference (huidige opzet) | Simpel te bouwen/demonstreren | Vereist internetverbinding; edge-deployment zou latency verder verlagen |
+
+### Toekomstig werk
+- Meer/betere data voor ondervertegenwoordigde klassen (bijv. `crack`, met de laagste recall)
+- Fraudedetectie: controleren of dezelfde schade al eerder geclaimd is
+- Controle op volledigheid van foto's (ontbrekende hoeken automatisch detecteren)
+- LLM-integratie voor automatisch gegenereerde, leesbare schaderapporten
+- Edge-deployment (bijv. op een tablet in de garage) met het ONNX-model
+
+## Team
+
+| Naam | Bijdrage |
+|---|---|
+| ... | ... |
+
+## Licentie
+
+Dit project is gemaakt voor educatieve doeleinden (PTC-opleiding).

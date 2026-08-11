@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install lichte dependencies (geen zware ML-libs nodig voor lint/tests)
+        run: |
+          pip install ruff pytest numpy
+
+      - name: Lint met ruff
+        run: ruff check src/ app/ tests/
+
+      - name: Syntax-check alle Python-bestanden
+        run: python -m py_compile src/*.py app/*.py tests/*.py
+
+      - name: Notebook JSON-validiteit checken
+        run: |
+          python -c "
+          import json, glob
+          for f in glob.glob('notebooks/*.ipynb'):
+              json.load(open(f))
+              print(f'{f}: geldig')
+          "
+
+      - name: Unit tests (alleen pure functies, geen model/netwerk nodig)
+        run: pytest tests/ -v

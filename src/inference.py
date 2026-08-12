@@ -7,7 +7,6 @@ from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
-from ultralytics import YOLO
 
 MODELS_DIR = Path(__file__).resolve().parent.parent / "models"
 DEFAULT_MODEL_PATH = MODELS_DIR / "best.pt"
@@ -15,6 +14,7 @@ DEFAULT_MODEL_PATH = MODELS_DIR / "best.pt"
 
 @lru_cache(maxsize=1)
 def load_model(model_path: str | Path = DEFAULT_MODEL_PATH) -> YOLO:
+    from ultralytics import YOLO
     """
     Laadt het model één keer in het geheugen (cache), zodat de webapp
     niet bij elke upload opnieuw het model hoeft te laden.

@@ -3,6 +3,7 @@ Herbruikbare inference-functies voor het CarDD segmentatiemodel.
 Wordt zowel gebruikt door de webapp (app/main.py) als door test/evaluatiescripts.
 """
 from __future__ import annotations
+
 from functools import lru_cache
 from pathlib import Path
 from typing import TYPE_CHECKING

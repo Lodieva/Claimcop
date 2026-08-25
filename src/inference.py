@@ -2,9 +2,13 @@
 Herbruikbare inference-functies voor het CarDD segmentatiemodel.
 Wordt zowel gebruikt door de webapp (app/main.py) als door test/evaluatiescripts.
 """
-
+from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+   if TYPE_CHECKING:
+       from ultralytics import YOLO
 
 import numpy as np
 
@@ -13,7 +17,7 @@ DEFAULT_MODEL_PATH = MODELS_DIR / "best.pt"
 
 
 @lru_cache(maxsize=1)
-def load_model(model_path: str | Path = DEFAULT_MODEL_PATH) -> YOLO:
+def load_model(model_path: str | Path = DEFAULT_MODEL_PATH) -> "YOLO":
     from ultralytics import YOLO
     """
     Laadt het model één keer in het geheugen (cache), zodat de webapp

@@ -168,42 +168,24 @@ Elke push/pull request draait automatisch (`.github/workflows/ci.yml`):
 
 ## App online zetten (deployment — toegankelijk voor anderen)
 
-Om de webapp via een publieke link beschikbaar te maken (zodat je docent
-of medestudenten hem kunnen openen zonder iets te installeren), gebruiken
-we **Hugging Face Spaces**.
-
-> **Waarom niet Streamlit Community Cloud?** Die geeft gratis maar 1 GB RAM.
-> Ons model (`yolo11x-seg`, de grootste YOLO11-variant) past daar mogelijk
-> niet in. Hugging Face Spaces geeft gratis 2 vCPU + **16 GB RAM**, en
-> ondersteunt Streamlit-apps rechtstreeks.
+Om de webapp via een publieke link beschikbaar te maken (zodat je docent of medestudenten hem kunnen openen zonder iets te installeren), gebruiken we **Streamlit Community Cloud**.
 
 ### Stappen
 
-1. Maak een gratis account op [huggingface.co](https://huggingface.co/join)
-2. Klik **New Space** → geef een naam → **SDK: Streamlit** → **Hardware: CPU basic (free)**
-3. Dit maakt een eigen git-repository voor je Space aan (los van je GitHub-repo)
-4. Clone die Space-repo lokaal, en kopieer je hele project erin:
-   ```bash
-   git clone https://huggingface.co/spaces/<jouw-username>/<space-naam>
-   cd <space-naam>
-   # kopieer alle projectbestanden hierin (app/, src/, requirements.txt, etc.)
-   ```
-5. Hernoem `SPACE_README.md` naar `README.md` in de Space-repo (deze bevat
-   de verplichte configuratie die Hugging Face nodig heeft om te weten dat
-   het een Streamlit-app is — pas het `[link naar je GitHub-repo]` erin aan)
-6. Push:
-   ```bash
-   git add -A
-   git commit -m "Deploy Car Damage Detection webapp"
-   git push
-   ```
-7. De Space bouwt automatisch (installeert `requirements.txt`, downloadt het
-   model bij de eerste request dankzij `ensure_model_available()` in
-   `app/main.py`) en je krijgt een publieke URL zoals:
-   `https://huggingface.co/spaces/<jouw-username>/<space-naam>`
+1. Zorg dat je laatste werkende code (incl. `requirements.txt` en het model) gepusht staat naar de `main`-branch op GitHub.
+2. Maak een gratis account op [share.streamlit.io](https://share.streamlit.io) door in te loggen met GitHub.
+3. Klik **"Create app"** → kies **"Deploy from existing repo"**.
+4. Vul in:
+   - **Repository:** `<Lodieva/Claimcop>`
+   - **Branch:** `main`
+   - **Main file path:** `app/main.py`
+5. Klik **"Deploy"**. Streamlit Cloud installeert automatisch alles uit `requirements.txt` en downloadt het model bij de eerste request dankzij `ensure_model_available()` in `app/main.py`.
+6. Na een paar minuten krijg je een publieke URL zoals:
+   `https://claimcop-gwns2y6znmrkqrfa2py5mt.streamlit.app/`
 
-> Zet die link in je README, je slides en je verslag — dit is wat je docent
-> bedoelde met "toegankelijk voor anderen".
+Elke nieuwe push naar `main` update de live app automatisch, zonder dat je opnieuw hoeft te deployen.
+
+Zet die link in je README, je slides en je verslag — dit is wat je docent bedoelde met "toegankelijk voor anderen".
 
 ## Model-optimalisatie (ONNX)
 

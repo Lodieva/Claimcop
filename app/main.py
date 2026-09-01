@@ -244,40 +244,35 @@ if uploaded_files:
         for item in summary:
             area_html = f'<span>oppervlak: <b>{item["area_pct"]}%</b></span>' if item.get("area_pct") is not None else ""
             badge = severity_badge(item.get("area_pct"))
-            rows_html += f"""
-            <div class="cc-detection">
-                <div class="cc-detection-label">
-                    <span class="cc-chip">{item['class']}</span>
-                    {badge}
-                </div>
-                <div class="cc-detection-meta">
-                    <span>confidence: <b>{item['confidence']:.0%}</b></span>
-                    {area_html}
-                </div>
-            </div>
-            """
+            rows_html += (
+                '<div class="cc-detection">'
+                '<div class="cc-detection-label">'
+                f'<span class="cc-chip">{item["class"]}</span>'
+                f'{badge}'
+                '</div>'
+                '<div class="cc-detection-meta">'
+                f'<span>confidence: <b>{item["confidence"]:.0%}</b></span>'
+                f'{area_html}'
+                '</div>'
+                '</div>'
+            )
 
         if summary:
-            st.markdown(
-                f"""
-                <div class="cc-card">
-                    <div class="cc-card-title">Resultaat — {uploaded_file.name}</div>
-                    {rows_html}
-                    <div class="cc-advice"><b>Advies:</b> laat deze claim beoordelen door een schade-expert.</div>
-                </div>
-                """,
-                unsafe_allow_html=True,
+            card_html = (
+                '<div class="cc-card">'
+                f'<div class="cc-card-title">Resultaat — {uploaded_file.name}</div>'
+                f'{rows_html}'
+                '<div class="cc-advice"><b>Advies:</b> laat deze claim beoordelen door een schade-expert.</div>'
+                '</div>'
             )
         else:
-            st.markdown(
-                f"""
-                <div class="cc-card">
-                    <div class="cc-card-title">Resultaat — {uploaded_file.name}</div>
-                    <div class="cc-empty">Geen schade gedetecteerd bij deze zekerheidsdrempel.</div>
-                </div>
-                """,
-                unsafe_allow_html=True,
+            card_html = (
+                '<div class="cc-card">'
+                f'<div class="cc-card-title">Resultaat — {uploaded_file.name}</div>'
+                '<div class="cc-empty">Geen schade gedetecteerd bij deze zekerheidsdrempel.</div>'
+                '</div>'
             )
+        st.markdown(card_html, unsafe_allow_html=True)
 else:
     st.markdown(
         '<div class="cc-empty">⬆️ Upload een foto om te starten.</div>',

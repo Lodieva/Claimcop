@@ -151,8 +151,13 @@ st.markdown(
     [data-testid="stFileUploaderDropzone"] {
         border-radius: 10px;
     }
+    /* Fix file uploader text overlap */
     [data-testid="stFileUploaderDropzoneInstructions"] {
-        position: relative; z-index: 2;
+        position: static !important;
+        z-index: auto !important;
+    }
+    [data-testid="stFileUploaderDropzoneInstructions"] button {
+        position: relative !important;
     }
     .stSlider label p { font-family: 'IBM Plex Mono', monospace !important; font-size: 12px !important; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft) !important; }
     </style>

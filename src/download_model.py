@@ -42,4 +42,3 @@ def download_baseline_model() -> Path:
 
 if __name__ == "__main__":
     download_baseline_model()
-   

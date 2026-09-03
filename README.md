@@ -86,11 +86,12 @@ Open vervolgens `http://localhost:8501` in je browser, upload een foto en bekijk
 url: https://claimcop-gwns2y6znmrkqrfa2py5mt.streamlit.app/
 
 ## Hoe gebruik je de Streamlit-app?
-
-1. **Upload een foto:** Klik op de uploadknop in de app en kies een duidelijke foto van de autoschade (JPG/PNG).
-2. **Analyse:** Het YOLO-model verwerkt de foto en plaatst een gekleurd masker over de gedetecteerde schade.
-3. **Bekijk de resultaten:** De app toont de categorie (bijv. *deuk* of *kras*), de confidence score en het geschatte schadeoppervlak.
-4. **Verwerk de claim:** Gebruik het overzicht voor een snelle eerste triage van de schadeclaim.
+1. **Upload een foto:** Klik op de uploadknop in de zijbalk of het hoofdscherm en kies een duidelijke foto van de autoschade (JPG/PNG).
+2. **Stel de Zekerheidsdrempel in (optioneel):** Gebruik de schuifbalk (*Confidence Threshold*) in de app om te bepalen hoe streng de AI moet zoeken:
+   * **Lage drempel (bijv. 0.15 - 0.20):** De AI zoekt gevoeliger en vindt ook hele lichte of subtiele schades, maar kan af en toe een schaduw of reflectie foutief aanmerken.
+   * **Hoge drempel (bijv. 0.50 - 0.80):** De AI toont alleen schades waar hij heel zeker van is (minder foutieve meldingen, maar lichte krassen kunnen gemist worden).
+3. **Analyse & Maskers:** Het YOLO-model verwerkt de foto en legt direct gekleurde maskers over de herkende beschadigingen.
+4. **Bekijk de resultaten:** Bekijk per gedetecteerde schade de categorie (bijv. *deuk* of *kras*), de zekerheidsscore en het berekende schadeoppervlak in procenten.
 
 
 ## Beperkingen

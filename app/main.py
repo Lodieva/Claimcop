@@ -80,6 +80,11 @@ st.markdown(
     html, body, [class*="st-"] { font-family: 'Inter', sans-serif; }
     .stApp { background: var(--bg); }
 
+    /* Upload button fix done by NR */
+    [data-testid="stIconMaterial"] {
+        font-family: 'Material Symbols Rounded' !important;
+    }
+
     h1, h2, h3 { font-family: 'Sora', sans-serif; color: var(--ink); letter-spacing: -0.01em; }
 
     #MainMenu, footer, header { visibility: hidden; }

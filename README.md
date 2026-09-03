@@ -94,7 +94,8 @@ url: https://claimcop-gwns2y6znmrkqrfa2py5mt.streamlit.app/
 4. **Bekijk de resultaten:** Bekijk per gedetecteerde schade de categorie (bijv. *deuk* of *kras*), de zekerheidsscore en het berekende schadeoppervlak in procenten.
 
 Met dit project onderzoeken we hoe je met computer vision autoschade automatisch kunt herkennen en inschatten op basis van foto's.
-*Zie resultaat bij app>assets>result.png->Voorbeeld van automatische schadedetectie met gekleurde segmentatiemaskers en oppervlakteberekening.*
+
+*Zie resultaat bij app>assets>result.png en scratch. Hier zijn voorbeelden van automatische schadedetectie met gekleurde segmentatiemaskers en oppervlakteberekening.*
 
 
 ## Beperkingen
